@@ -1,0 +1,1115 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Relevé Chantier</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#1B5DA6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head><body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout : application une colonne, pensée pouce/téléphone ; plan plein écran avec barres d'outils haut/bas. */
+:root{
+  --bg:#EEF2F5; --surface:#FFFFFF; --surface-2:#F6F8FA; --fg:#13212F; --muted:#5B6979; --line:#D3DBE3;
+  --accent:#1B5DA6; --accent-fg:#FFFFFF; --accent-soft:#DCE8F6; --planbg:#DDE3E9; --scrim:rgba(10,20,30,.45);
+  --l-bloq:#C9372B; --l-clar:#D98300; --l-obs:#2D8653; --l-pos:#14869A;
+  --f-ui:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-head:"IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-num:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0D141B; --surface:#152029; --surface-2:#1B2833; --fg:#E6EDF3; --muted:#93A3B3; --line:#2A3947;
+  --accent:#6BA7EA; --accent-fg:#0B1622; --accent-soft:#1E3550; --planbg:#0A1016; --scrim:rgba(0,0,0,.6);
+  --l-bloq:#E5554A; --l-clar:#EDA22A; --l-obs:#46AE73; --l-pos:#2EB0C4; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0D141B; --surface:#152029; --surface-2:#1B2833; --fg:#E6EDF3; --muted:#93A3B3; --line:#2A3947;
+  --accent:#6BA7EA; --accent-fg:#0B1622; --accent-soft:#1E3550; --planbg:#0A1016; --scrim:rgba(0,0,0,.6);
+  --l-bloq:#E5554A; --l-clar:#EDA22A; --l-obs:#46AE73; --l-pos:#2EB0C4; color-scheme:dark }
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--f-ui);-webkit-tap-highlight-color:transparent;overflow:hidden}
+#app{height:100%;display:flex;flex-direction:column}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lv-bloq{--lc:var(--l-bloq)} .lv-clar{--lc:var(--l-clar)} .lv-obs{--lc:var(--l-obs)} .lv-pos{--lc:var(--l-pos)}
+
+/* Barres */
+.bar{display:flex;align-items:center;gap:8px;min-height:56px;background:var(--surface);border-bottom:1px solid var(--line);
+  padding-left:max(8px, env(safe-area-inset-left,0px));padding-right:max(8px, env(safe-area-inset-right,0px));flex:none}
+.bar h1{flex:1;min-width:0;margin:0;font:600 18px/1.2 var(--f-head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand{flex:1;font:700 19px/1 var(--f-head);letter-spacing:.01em;padding-left:8px}
+.brand span{color:var(--accent)}
+.ibtn{width:44px;height:44px;border:0;background:none;border-radius:10px;display:grid;place-items:center;cursor:pointer;flex:none}
+.ibtn:active{background:var(--surface-2)}
+.ibtn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* Page défilante */
+.page{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding-block:16px 32px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.eyebrow{font:600 12px/1 var(--f-head);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.h2{font:600 22px/1.2 var(--f-head);margin:0;text-wrap:balance}
+.note{color:var(--muted);font-size:13.5px;margin:0}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 16px;border-radius:var(--r);
+  border:1px solid var(--line);background:var(--surface);cursor:pointer;font-weight:500;text-align:center}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.danger{color:var(--l-bloq);border-color:color-mix(in srgb, var(--l-bloq) 45%, var(--line))}
+.btn.danger.armed{background:var(--l-bloq);color:#fff;border-color:var(--l-bloq)}
+.btn.block{width:100%}
+.btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn:disabled{opacity:.5}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.row-btns .btn{flex:1 1 140px}
+
+/* Cartes chantier */
+.list{display:flex;flex-direction:column;gap:10px}
+.card{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;cursor:pointer}
+.card .grow{flex:1;min-width:0}
+.card b{display:block;font:600 17px/1.25 var(--f-head);overflow-wrap:anywhere}
+.card small{color:var(--muted);font-size:13px}
+.tally{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.tally span{font:600 12px/1 var(--f-num);padding:4px 7px;border-radius:20px;background:color-mix(in srgb, var(--lc) 16%, transparent);color:var(--lc)}
+.empty{border:1.5px dashed var(--line);border-radius:var(--r);padding:22px 18px;display:flex;flex-direction:column;gap:12px;background:var(--surface-2)}
+
+/* Onglets */
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--line);flex:none;
+  padding-left:max(8px, env(safe-area-inset-left,0px));padding-right:max(8px, env(safe-area-inset-right,0px))}
+.tabs button{flex:1;border:0;background:none;padding:12px 8px;font:600 15px var(--f-head);color:var(--muted);border-bottom:3px solid transparent;cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.tabs .n{font:500 13px var(--f-num);margin-left:6px}
+
+/* Grille des plans */
+.plans{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.plancard{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;cursor:pointer;text-align:left;padding:0}
+.plancard .th{aspect-ratio:4/3;max-width:100%;background:var(--planbg) center/contain no-repeat;border-bottom:1px solid var(--line)}
+.plancard .meta{padding:9px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.plancard b{font:600 14.5px/1.25 var(--f-head);overflow-wrap:anywhere}
+.plancard small{color:var(--muted);font:500 12px var(--f-num)}
+
+/* Filtres et lignes de points */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:20px;padding:7px 12px;font-size:13.5px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:36px}
+.chip .dot{width:9px;height:9px;border-radius:50%;background:var(--lc)}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chip.lvl[aria-pressed="true"]{background:var(--lc);border-color:var(--lc);color:#fff}
+.chip.lvl[aria-pressed="true"] .dot{background:#fff}
+.prow{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;cursor:pointer}
+.num{flex:none;min-width:44px;height:30px;padding:0 6px;border-radius:15px;background:var(--lc);color:#fff;font:600 14px/30px var(--f-num);text-align:center}
+.prow .grow{flex:1;min-width:0}
+.prow b{display:block;font-weight:500;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prow b.none{color:var(--muted);font-style:italic}
+.prow small{color:var(--muted);font-size:12.5px}
+
+/* Visionneuse */
+.viewer-shell{flex:1;display:flex;flex-direction:column;min-height:0}
+#viewer{position:relative;flex:1;overflow:hidden;touch-action:none;background:var(--planbg);cursor:grab;user-select:none;-webkit-user-select:none}
+#viewer.adding{cursor:crosshair}
+#stage{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+#stage img{display:block;max-width:none;pointer-events:none;user-select:none;-webkit-user-drag:none;background:#fff;box-shadow:0 2px 14px rgba(0,0,0,.18)}
+#pins{position:absolute;inset:0}
+.pin{position:absolute;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%) scale(var(--inv,1));transform-origin:50% 100%;cursor:pointer}
+.pin b{min-width:32px;height:32px;padding:0 6px;border-radius:16px;background:var(--lc);color:#fff;font:600 14px/28px var(--f-num);text-align:center;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.pin i{width:3px;height:11px;background:var(--lc);box-shadow:0 0 0 1px #fff}
+.pin.hl b{outline:3px solid var(--accent);outline-offset:2px}
+.vtools{display:flex;align-items:center;gap:8px;background:var(--surface);border-top:1px solid var(--line);flex:none;
+  padding-block:8px;padding-left:max(8px, env(safe-area-inset-left,0px));padding-right:max(8px, env(safe-area-inset-right,0px))}
+.vtools .sp{flex:1}
+.addbtn{min-height:52px;padding:0 20px;font:600 16px var(--f-head);letter-spacing:.02em}
+.addbtn[aria-pressed="true"]{background:var(--l-clar);border-color:var(--l-clar);color:#1b1200}
+.hint{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 14px;border-radius:20px;font-size:14px;font-weight:500;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none;max-width:calc(100% - 32px);text-align:center}
+
+/* Feuille (modale) */
+.sheet-inner{display:contents}
+.vh{position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden}
+label.btn{cursor:pointer;user-select:none;-webkit-user-select:none}
+#scrim{position:fixed;inset:0;background:var(--scrim);z-index:20}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;max-height:94%;display:flex;flex-direction:column;background:var(--bg);border-radius:16px 16px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.25)}
+@media (min-width:760px){ #sheet{left:50%;right:auto;width:680px;transform:translateX(-50%);bottom:3vh;border-radius:16px;max-height:90%} }
+.sheet-head{display:flex;align-items:center;gap:10px;padding:10px max(10px, env(safe-area-inset-right,0px)) 10px max(16px, env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);background:var(--surface);border-radius:16px 16px 0 0;flex:none}
+.sheet-head .grow{flex:1;min-width:0}
+.sheet-head h2{margin:0;font:600 18px/1.2 var(--f-head);overflow-wrap:anywhere}
+.sheet-head small{color:var(--muted);font-size:12.5px}
+.bignum{font:600 20px/40px var(--f-num);min-width:64px;height:40px;border-radius:20px;background:var(--lc);color:#fff;text-align:center;padding:0 10px;flex:none}
+.sheet-body{overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:18px;
+  padding-block:16px calc(20px + env(safe-area-inset-bottom,0px));padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+.field{display:flex;flex-direction:column;gap:8px}
+textarea,input[type=text]{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);color:var(--fg);font:16px/1.45 var(--f-ui);padding:12px}
+textarea{min-height:120px;resize:vertical}
+.media{display:flex;flex-direction:column;gap:8px}
+.aud{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 6px 6px 10px}
+.aud audio{flex:1;min-width:0;height:40px}
+.aud small{font:500 12px var(--f-num);color:var(--muted);flex:none}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.photos button{aspect-ratio:1;max-width:100%;border:1px solid var(--line);border-radius:8px;background:var(--planbg) center/cover no-repeat;cursor:pointer;padding:0}
+.rec{background:var(--l-bloq);color:#fff;border-color:var(--l-bloq)}
+.rec .dot{width:10px;height:10px;border-radius:50%;background:#fff;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.rec .dot{animation:none}}
+.divider{height:1px;background:var(--line)}
+.prog{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line)}
+.prog i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
+
+#lightbox{position:fixed;inset:0;z-index:30;background:#000;display:flex;flex-direction:column}
+#lightbox img{flex:1;min-height:0;object-fit:contain;width:100%}
+#lightbox .lb-bar{display:flex;justify-content:space-between;gap:8px;padding:10px max(12px, env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px, env(safe-area-inset-left,0px));background:#000}
+#lightbox .btn{background:#222;color:#fff;border-color:#444}
+
+#toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:20px;font-size:14px;font-weight:500;max-width:calc(100% - 32px);text-align:center;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.banner{background:color-mix(in srgb, var(--l-clar) 14%, var(--surface));border:1px solid color-mix(in srgb, var(--l-clar) 45%, var(--line));border-radius:var(--r);padding:12px 14px;font-size:14px}
+.kv{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted)}
+.kv b{font:500 13px var(--f-num);color:var(--fg)}
+</style>
+
+<div id="app"></div>
+<div id="scrim" hidden></div>
+<div id="sheet" hidden></div>
+<div id="lightbox" hidden></div>
+<div id="toast" hidden></div>
+<input type="file" id="inPlan" class="vh" accept="application/pdf,.pdf,image/*" tabindex="-1">
+<input type="file" id="inPhotoCam" class="vh" accept="image/*" capture="environment" tabindex="-1">
+<input type="file" id="inPhotoLib" class="vh" accept="image/*" multiple tabindex="-1">
+<input type="file" id="inAudio" class="vh" accept="audio/*" capture tabindex="-1">
+<input type="file" id="inBackup" class="vh" accept=".zip,application/zip,application/x-zip-compressed,application/octet-stream" tabindex="-1">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+(() => {
+'use strict';
+
+/* ---------- Constantes ---------- */
+const APP_VERSION = '1.1';
+const LEVELS = [
+  { k: 'bloq', label: 'Bloquant' },
+  { k: 'clar', label: 'À clarifier' },
+  { k: 'obs',  label: 'Observation' },
+  { k: 'pos',  label: 'Point positif' },
+];
+const LEVEL_LABEL = Object.fromEntries(LEVELS.map(l => [l.k, l.label]));
+const CATS = ['CVC', 'Désenfumage', 'Plomberie', 'Électricité', 'Architecture', 'Sécurité', 'Autre'];
+const MAX_PLAN_PIXELS = 15e6;   // ≈ A0 à 4600 px de large, sous la limite canvas d'iOS
+const IN_CLAUDE = !!window.claude;
+const CAN_RECORD = !IN_CLAUDE && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+
+if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+/* ---------- Utilitaires ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const pad = (n, w = 3) => String(n).padStart(w, '0');
+const fmtDate = t => new Date(t).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const fmtDay = t => new Date(t).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+const slug = s => String(s || 'chantier').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_').slice(0, 60) || 'chantier';
+const toBlob = (c, type = 'image/jpeg', q = 0.86) => new Promise(r => c.toBlob(r, type, q));
+const extOf = mime => (/webm/.test(mime) ? 'webm' : /ogg/.test(mime) ? 'ogg' : /mp4|m4a|aac/.test(mime) ? 'm4a' : /mpeg|mp3/.test(mime) ? 'mp3' : /wav/.test(mime) ? 'wav' : /png/.test(mime) ? 'png' : /jpe?g/.test(mime) ? 'jpg' : 'bin');
+const ICON = {
+  back: '<svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>',
+  more: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>',
+  close: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  minus: '<svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>',
+  fit: '<svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+  list: '<svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>',
+  mic: '<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+  cam: '<svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  img: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-5-5-9 8"/></svg>',
+  file: '<svg viewBox="0 0 24 24"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/></svg>',
+  down: '<svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+  pin: '<svg viewBox="0 0 24 24"><path d="M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2"/></svg>',
+};
+
+let toastTimer;
+function toast(msg, ms = 2600) {
+  const t = $('#toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), ms);
+}
+
+/* ---------- Base locale (IndexedDB) ---------- */
+let dbPromise;
+function db() {
+  return dbPromise ||= new Promise((res, rej) => {
+    let r;
+    try { r = indexedDB.open('releve-chantier', 1); } catch (e) { return rej(e); }
+    r.onupgradeneeded = () => {
+      const d = r.result;
+      d.createObjectStore('projects', { keyPath: 'id' });
+      d.createObjectStore('plans', { keyPath: 'id' }).createIndex('projectId', 'projectId');
+      const pt = d.createObjectStore('points', { keyPath: 'id' });
+      pt.createIndex('projectId', 'projectId'); pt.createIndex('planId', 'planId');
+      const m = d.createObjectStore('media', { keyPath: 'id' });
+      m.createIndex('pointId', 'pointId'); m.createIndex('projectId', 'projectId');
+    };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+const rq = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+const os = async (s, mode = 'readonly') => (await db()).transaction(s, mode).objectStore(s);
+const dbGet = async (s, k) => rq((await os(s)).get(k));
+const dbPut = async (s, v) => rq((await os(s, 'readwrite')).put(v));
+const dbDel = async (s, k) => rq((await os(s, 'readwrite')).delete(k));
+const dbAll = async s => rq((await os(s)).getAll());
+const dbBy = async (s, i, v) => rq((await os(s)).index(i).getAll(v));
+
+async function nextNumber(projectId) {
+  const p = await dbGet('projects', projectId);
+  const n = p.nextNum || 1;
+  p.nextNum = n + 1; p.updatedAt = Date.now();
+  await dbPut('projects', p);
+  return n;
+}
+async function touchProject(projectId) {
+  const p = await dbGet('projects', projectId);
+  if (p) { p.updatedAt = Date.now(); await dbPut('projects', p); }
+}
+async function deletePoint(id) {
+  for (const m of await dbBy('media', 'pointId', id)) await dbDel('media', m.id);
+  await dbDel('points', id);
+}
+async function deletePlan(id) {
+  for (const p of await dbBy('points', 'planId', id)) await deletePoint(p.id);
+  await dbDel('plans', id);
+}
+async function deleteProject(id) {
+  for (const p of await dbBy('plans', 'projectId', id)) await deletePlan(p.id);
+  for (const m of await dbBy('media', 'projectId', id)) await dbDel('media', m.id);
+  await dbDel('projects', id);
+}
+
+/* ---------- État et navigation ---------- */
+const S = { view: 'home', projectId: null, planId: null, tab: 'plans', filter: 'all', addMode: false, moveId: null };
+const urls = new Set();
+const objURL = b => { const u = URL.createObjectURL(b); urls.add(u); return u; };
+function freeURLs() { urls.forEach(u => URL.revokeObjectURL(u)); urls.clear(); }
+let viewer = null, wakeLock = null;
+
+async function go(view, extra = {}) {
+  Object.assign(S, { view, addMode: false, moveId: null }, extra);
+  closeSheet(true);
+  freeURLs(); viewer = null;
+  releaseWake();
+  try {
+    if (view === 'home') await renderHome();
+    else if (view === 'project') await renderProject();
+    else if (view === 'plan') await renderPlan();
+  } catch (e) {
+    console.error(e);
+    $('#app').innerHTML = `<div class="page"><div class="wrap"><div class="banner">Erreur d'affichage : ${esc(e.message || e)}</div><button class="btn" data-a="home">Retour à l'accueil</button></div></div>`;
+  }
+}
+
+/* ---------- Accueil ---------- */
+async function renderHome() {
+  let projects = [], storageOk = true;
+  try { projects = await dbAll('projects'); } catch (e) { storageOk = false; }
+  projects.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  const allPoints = storageOk ? await dbAll('points') : [];
+  const allPlans = storageOk ? await dbAll('plans') : [];
+
+  const cards = projects.map(p => {
+    const pts = allPoints.filter(x => x.projectId === p.id);
+    const nPlans = allPlans.filter(x => x.projectId === p.id).length;
+    const tally = LEVELS.map(l => {
+      const n = pts.filter(x => x.level === l.k).length;
+      return n ? `<span class="lv-${l.k}" title="${esc(l.label)}">${n} ${esc(l.label.toLowerCase())}</span>` : '';
+    }).join('');
+    return `<button class="card" data-a="open-project" data-id="${p.id}">
+      <div class="grow"><b>${esc(p.name)}</b>
+      <small>${nPlans} plan${nPlans > 1 ? 's' : ''} · ${pts.length} point${pts.length > 1 ? 's' : ''} · modifié le ${fmtDay(p.updatedAt || p.createdAt)}</small>
+      ${tally ? `<div class="tally">${tally}</div>` : ''}</div>
+      <span class="ibtn" aria-hidden="true" style="transform:scaleX(-1)">${ICON.back}</span></button>`;
+  }).join('');
+
+  $('#app').innerHTML = `
+  <header class="bar"><div class="brand">Relevé <span>Chantier</span></div></header>
+  <main class="page"><div class="wrap">
+    ${storageOk ? '' : `<div class="banner">Le stockage local est bloqué dans ce navigateur (navigation privée ?). Les relevés ne pourront pas être enregistrés.</div>`}
+    <div style="display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div><div class="eyebrow">Visites</div><h2 class="h2">Chantiers</h2></div>
+      <button class="btn primary" data-a="new-project">${ICON.plus}Nouveau chantier</button>
+    </div>
+    ${projects.length ? `<div class="list">${cards}</div>` : `
+    <div class="empty">
+      <b style="font:600 17px var(--f-head)">Aucun chantier pour l'instant</b>
+      <p class="note">Créez un chantier, importez les plans en PDF au bureau, puis sur place touchez le plan pour poser des points numérotés 1, 2, 3… avec texte, audio et photos.</p>
+      <div class="row-btns"><button class="btn primary" data-a="new-project">${ICON.plus}Créer un chantier</button>
+      <button class="btn" data-a="demo">Essayer avec un plan d'exemple</button></div>
+    </div>`}
+    <div class="divider"></div>
+    <div class="field">
+      <div class="eyebrow">Sauvegarde</div>
+      <p class="note">Les relevés restent sur cet appareil. Exportez chaque chantier après la visite (fichier .zip) : il sert de sauvegarde et peut être réimporté sur un autre appareil.</p>
+      <div class="row-btns"><label class="btn" for="inBackup">${ICON.file}Importer un relevé (.zip)</label>
+      ${projects.length ? `<button class="btn" data-a="demo">Plan d'exemple</button>` : ''}</div>
+      <div class="kv" id="storageInfo"></div>
+    </div>
+  </div></main>`;
+  showStorage();
+}
+async function showStorage() {
+  try {
+    const e = await navigator.storage?.estimate?.();
+    const persisted = await navigator.storage?.persisted?.();
+    if (e) $('#storageInfo').innerHTML = `<span>Espace utilisé sur l'appareil${persisted ? ' (protégé)' : ''}</span><b>${(e.usage / 1048576).toFixed(1)} Mo</b>`;
+  } catch {}
+}
+
+/* ---------- Chantier ---------- */
+async function renderProject() {
+  const p = await dbGet('projects', S.projectId);
+  if (!p) return go('home');
+  const plans = (await dbBy('plans', 'projectId', p.id)).sort((a, b) => a.order - b.order);
+  const points = (await dbBy('points', 'projectId', p.id)).sort((a, b) => a.num - b.num);
+  const media = await dbBy('media', 'projectId', p.id);
+  const planName = Object.fromEntries(plans.map(x => [x.id, x.name]));
+
+  let body;
+  if (S.tab === 'plans') {
+    body = `
+      <label class="btn primary block" for="inPlan">${ICON.file}Importer un plan (PDF ou image)</label>
+      ${plans.length ? `<div class="plans">${plans.map(pl => {
+        const n = points.filter(x => x.planId === pl.id).length;
+        return `<button class="plancard" data-a="open-plan" data-id="${pl.id}">
+          <div class="th" style="background-image:url('${objURL(pl.thumb || pl.blob)}')"></div>
+          <div class="meta"><b>${esc(pl.name)}</b><small>${n} point${n > 1 ? 's' : ''}</small></div></button>`;
+      }).join('')}</div>` : `<div class="empty"><b style="font:600 16px var(--f-head)">Pas encore de plan</b>
+        <p class="note">Importez un PDF (toutes ou certaines pages) ou une image. Faites-le avec du réseau, au bureau : ensuite tout fonctionne sur place sans connexion.</p></div>`}`;
+  } else {
+    const shown = points.filter(x => S.filter === 'all' || x.level === S.filter);
+    body = `
+      <div class="chips">
+        <button class="chip" data-a="filter" data-k="all" aria-pressed="${S.filter === 'all'}">Tous · ${points.length}</button>
+        ${LEVELS.map(l => `<button class="chip lvl lv-${l.k}" data-a="filter" data-k="${l.k}" aria-pressed="${S.filter === l.k}"><span class="dot"></span>${esc(l.label)} · ${points.filter(x => x.level === l.k).length}</button>`).join('')}
+      </div>
+      ${shown.length ? `<div class="list">${shown.map(pt => {
+        const m = media.filter(x => x.pointId === pt.id);
+        const na = m.filter(x => x.kind === 'audio').length, np = m.filter(x => x.kind === 'photo').length;
+        const first = (pt.text || '').trim().split('\n')[0];
+        const extras = [planName[pt.planId], pt.cat, na ? `${na} audio` : '', np ? `${np} photo${np > 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ');
+        return `<button class="prow lv-${pt.level}" data-a="open-point" data-id="${pt.id}">
+          <span class="num">${pt.num}</span>
+          <div class="grow"><b class="${first ? '' : 'none'}">${esc(first || 'Sans texte')}</b><small>${esc(extras)}</small></div></button>`;
+      }).join('')}</div>` : `<p class="note">${points.length ? 'Aucun point pour ce filtre.' : 'Aucun point. Ouvrez un plan et touchez « + Point ».'}</p>`}`;
+  }
+
+  $('#app').innerHTML = `
+    <header class="bar">
+      <button class="ibtn" data-a="home" aria-label="Retour">${ICON.back}</button>
+      <h1>${esc(p.name)}</h1>
+      <button class="ibtn" data-a="project-menu" aria-label="Actions du chantier">${ICON.more}</button>
+    </header>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-a="tab" data-k="plans" aria-selected="${S.tab === 'plans'}">Plans<span class="n">${plans.length}</span></button>
+      <button role="tab" data-a="tab" data-k="points" aria-selected="${S.tab === 'points'}">Points<span class="n">${points.length}</span></button>
+    </nav>
+    <main class="page"><div class="wrap">${body}
+      <div class="divider"></div>
+      <button class="btn block" data-a="export">${ICON.down}Exporter le relevé (.zip)</button>
+    </div></main>`;
+}
+
+/* ---------- Visionneuse de plan ---------- */
+async function renderPlan() {
+  const plan = await dbGet('plans', S.planId);
+  if (!plan) return go('project');
+  const points = (await dbBy('points', 'planId', plan.id)).sort((a, b) => a.num - b.num);
+  $('#app').innerHTML = `
+    <header class="bar">
+      <button class="ibtn" data-a="back-project" aria-label="Retour au chantier">${ICON.back}</button>
+      <h1>${esc(plan.name)}</h1>
+      <button class="ibtn" data-a="plan-menu" aria-label="Actions du plan">${ICON.more}</button>
+    </header>
+    <div class="viewer-shell">
+      <div id="viewer"><div id="stage" style="width:${plan.w}px;height:${plan.h}px">
+        <img id="planImg" alt="" width="${plan.w}" height="${plan.h}" src="${objURL(plan.blob)}"><div id="pins"></div></div>
+        <div class="hint" id="hint" hidden></div></div>
+      <div class="vtools">
+        <button class="ibtn" data-a="zoom-out" aria-label="Dézoomer">${ICON.minus}</button>
+        <button class="ibtn" data-a="zoom-fit" aria-label="Plan entier">${ICON.fit}</button>
+        <button class="ibtn" data-a="zoom-in" aria-label="Zoomer">${ICON.plus}</button>
+        <span class="sp"></span>
+        <button class="ibtn" data-a="tab-points" aria-label="Liste des points">${ICON.list}</button>
+        <button class="btn primary addbtn" data-a="add-mode" aria-pressed="false">${ICON.plus}Point</button>
+      </div>
+    </div>`;
+  viewer = setupViewer(plan, points);
+  requestWake();
+}
+
+function pinHTML(pt) {
+  return `<div class="pin lv-${pt.level}" data-id="${pt.id}" role="button" aria-label="Point ${pt.num}" style="left:${(pt.x * 100).toFixed(4)}%;top:${(pt.y * 100).toFixed(4)}%"><b>${pt.num}</b><i></i></div>`;
+}
+
+function setupViewer(plan, points) {
+  const vp = $('#viewer'), stage = $('#stage'), pins = $('#pins');
+  const W = plan.w, H = plan.h;
+  let s = 1, tx = 0, ty = 0, minS = 0.05, fitS = 1;
+  const maxS = 4;
+  pins.innerHTML = points.map(pinHTML).join('');
+
+  const apply = () => { stage.style.transform = `translate(${tx}px,${ty}px) scale(${s})`; stage.style.setProperty('--inv', 1 / s); };
+  const fit = () => {
+    const r = vp.getBoundingClientRect();
+    fitS = Math.min(r.width / W, r.height / H) * 0.96; s = fitS; minS = fitS * 0.6;
+    tx = (r.width - W * s) / 2; ty = (r.height - H * s) / 2; apply();
+  };
+  const zoomAt = (f, cx, cy) => {
+    const ns = clamp(s * f, minS, maxS), ix = (cx - tx) / s, iy = (cy - ty) / s;
+    s = ns; tx = cx - ix * s; ty = cy - iy * s; apply();
+  };
+  const zoomCenter = f => { const r = vp.getBoundingClientRect(); zoomAt(f, r.width / 2, r.height / 2); };
+  const centerOn = (x, y, zoom) => {
+    const r = vp.getBoundingClientRect();
+    if (zoom) s = clamp(Math.max(s, fitS * zoom), minS, maxS);
+    tx = r.width / 2 - x * W * s; ty = r.height / 2 - y * H * s; apply();
+  };
+
+  const pointers = new Map();
+  let g = null, lp = null;
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const mid = (a, b, r) => ({ x: (a.x + b.x) / 2 - r.left, y: (a.y + b.y) / 2 - r.top });
+
+  const placeAt = (cx, cy) => {
+    const r = vp.getBoundingClientRect();
+    const x = (cx - r.left - tx) / s / W, y = (cy - r.top - ty) / s / H;
+    if (x < 0 || x > 1 || y < 0 || y > 1) { toast('Touchez à l\'intérieur du plan'); return; }
+    if (S.moveId) movePoint(S.moveId, x, y); else createPoint(plan, x, y);
+  };
+
+  vp.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    try { vp.setPointerCapture(e.pointerId); } catch {}
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    clearTimeout(lp);
+    if (pointers.size === 1) {
+      g = { type: 'pan', sx: e.clientX, sy: e.clientY, tx0: tx, ty0: ty, moved: false, cancelled: false, pin: e.target.closest('.pin') };
+      const cx = e.clientX, cy = e.clientY;
+      lp = setTimeout(() => {
+        if (g && g.type === 'pan' && !g.moved && !g.pin) { g.cancelled = true; navigator.vibrate?.(25); placeAt(cx, cy); }
+      }, 550);
+    } else if (pointers.size === 2) {
+      const r = vp.getBoundingClientRect(); const [a, b] = [...pointers.values()];
+      g = { type: 'pinch', d0: dist(a, b) || 1, m0: mid(a, b, r), s0: s, tx0: tx, ty0: ty };
+    }
+  });
+  vp.addEventListener('pointermove', e => {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (!g) return;
+    if (g.type === 'pinch' && pointers.size >= 2) {
+      const r = vp.getBoundingClientRect(); const [a, b] = [...pointers.values()];
+      const m = mid(a, b, r), ns = clamp(g.s0 * dist(a, b) / g.d0, minS, maxS);
+      const ix = (g.m0.x - g.tx0) / g.s0, iy = (g.m0.y - g.ty0) / g.s0;
+      s = ns; tx = m.x - ix * s; ty = m.y - iy * s; apply();
+    } else if (g.type === 'pan') {
+      const dx = e.clientX - g.sx, dy = e.clientY - g.sy;
+      if (!g.moved && Math.hypot(dx, dy) > 8) { g.moved = true; clearTimeout(lp); }
+      if (g.moved) { tx = g.tx0 + dx; ty = g.ty0 + dy; apply(); }
+    }
+  });
+  const end = e => {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.delete(e.pointerId); clearTimeout(lp);
+    if (g && g.type === 'pan' && pointers.size === 0) {
+      if (e.type === 'pointerup' && !g.moved && !g.cancelled) {
+        if (g.pin && !S.moveId) openPoint(g.pin.dataset.id);
+        else if (S.addMode || S.moveId) placeAt(e.clientX, e.clientY);
+      }
+      g = null;
+    } else if (g && g.type === 'pinch' && pointers.size === 1) {
+      const [p] = [...pointers.values()];
+      g = { type: 'pan', sx: p.x, sy: p.y, tx0: tx, ty0: ty, moved: true, cancelled: true };
+    }
+    if (pointers.size === 0) g = null;
+  };
+  vp.addEventListener('pointerup', end);
+  vp.addEventListener('pointercancel', end);
+  vp.addEventListener('wheel', e => {
+    e.preventDefault(); const r = vp.getBoundingClientRect();
+    zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top);
+  }, { passive: false });
+
+  const ro = new ResizeObserver(() => { if (!api.touched) fit(); });
+  ro.observe(vp);
+  vp.addEventListener('pointerdown', () => (api.touched = true), { once: true });
+
+  const api = {
+    touched: false, fit, zoomCenter, centerOn,
+    refreshPins: async () => {
+      const pts = await dbBy('points', 'planId', plan.id);
+      pins.innerHTML = pts.sort((a, b) => a.num - b.num).map(pinHTML).join('');
+    },
+    highlight: id => { $$('.pin', pins).forEach(p => p.classList.toggle('hl', p.dataset.id === id)); },
+  };
+  fit();
+  if (S.focusPoint) {
+    const pt = points.find(p => p.id === S.focusPoint);
+    if (pt) { api.touched = true; centerOn(pt.x, pt.y, 2.5); api.highlight(pt.id); }
+    S.focusPoint = null;
+  }
+  return api;
+}
+
+function setAddMode(on, moveId = null) {
+  S.addMode = on; S.moveId = moveId;
+  const b = $('[data-a="add-mode"]'), hint = $('#hint'), vp = $('#viewer');
+  if (!b) return;
+  b.setAttribute('aria-pressed', String(on || !!moveId));
+  b.innerHTML = (on || moveId) ? `${ICON.close}Annuler` : `${ICON.plus}Point`;
+  vp.classList.toggle('adding', on || !!moveId);
+  if (on || moveId) {
+    dbGet('projects', S.projectId).then(p => {
+      hint.textContent = moveId ? 'Touchez le nouvel emplacement du point' : `Touchez le plan pour placer le point ${p.nextNum || 1}`;
+      hint.hidden = false;
+    });
+  } else hint.hidden = true;
+}
+
+async function createPoint(plan, x, y) {
+  const num = await nextNumber(plan.projectId);
+  const pt = { id: uid(), projectId: plan.projectId, planId: plan.id, num, x, y, level: 'obs', cat: '', text: '', createdAt: Date.now(), updatedAt: Date.now() };
+  await dbPut('points', pt);
+  setAddMode(false);
+  await viewer?.refreshPins();
+  viewer?.highlight(pt.id);
+  openPoint(pt.id, { fresh: true });
+}
+async function movePoint(id, x, y) {
+  const pt = await dbGet('points', id); if (!pt) return;
+  Object.assign(pt, { x, y, updatedAt: Date.now() }); await dbPut('points', pt);
+  setAddMode(false); await viewer?.refreshPins(); viewer?.highlight(id);
+  toast(`Point ${pt.num} déplacé`);
+}
+
+async function requestWake() { try { wakeLock = await navigator.wakeLock?.request('screen'); } catch {} }
+function releaseWake() { try { wakeLock?.release(); } catch {} wakeLock = null; }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.view === 'plan') requestWake(); });
+
+/* ---------- Feuille générique ---------- */
+let sheetCleanup = null;
+function openSheet(html, mount) {
+  closeSheet(true);
+  const sh = $('#sheet');
+  sh.innerHTML = `<div class="sheet-inner">${html}</div>`; sh.hidden = false; $('#scrim').hidden = false;
+  sheetCleanup = mount ? mount(sh.firstElementChild) : null;
+}
+function closeSheet(silent) {
+  if (typeof sheetCleanup === 'function') { try { sheetCleanup(); } catch {} }
+  sheetCleanup = null;
+  $('#sheet').hidden = true; $('#scrim').hidden = true; $('#sheet').innerHTML = '';
+  if (!silent && S.view === 'project') renderProject();
+}
+$('#scrim').addEventListener('click', () => closeSheet());
+
+function sheetHead(title, sub = '', lead = '') {
+  return `<div class="sheet-head">${lead}<div class="grow"><h2>${esc(title)}</h2>${sub ? `<small>${esc(sub)}</small>` : ''}</div>
+    <button class="ibtn" data-a="close-sheet" aria-label="Fermer">${ICON.close}</button></div>`;
+}
+
+function askText({ title, label, value = '', ok = 'Valider', onOk }) {
+  openSheet(`${sheetHead(title)}<form class="sheet-body" id="askForm">
+    <label class="field"><span class="eyebrow">${esc(label)}</span><input type="text" id="askInput" value="${esc(value)}" autocomplete="off"></label>
+    <button class="btn primary block" type="submit">${esc(ok)}</button></form>`, sh => {
+    const inp = $('#askInput', sh); setTimeout(() => { inp.focus(); inp.select(); }, 60);
+    $('#askForm', sh).addEventListener('submit', async e => {
+      e.preventDefault(); const v = inp.value.trim(); if (!v) { inp.focus(); return; }
+      await onOk(v);
+    });
+  });
+}
+
+function armDanger(btn, label, action) {
+  if (btn.classList.contains('armed')) { action(); return; }
+  const orig = btn.innerHTML;
+  btn.classList.add('armed'); btn.textContent = label;
+  setTimeout(() => { if (btn.isConnected) { btn.classList.remove('armed'); btn.innerHTML = orig; } }, 3500);
+}
+
+/* ---------- Fiche d'un point ---------- */
+let recorder = null;
+async function openPoint(id, opts = {}) {
+  const pt = await dbGet('points', id); if (!pt) return;
+  const plan = await dbGet('plans', pt.planId);
+  const sheetUrls = [];
+  const u = b => { const x = URL.createObjectURL(b); sheetUrls.push(x); return x; };
+  let saveTimer = null;
+
+  const save = async () => { pt.updatedAt = Date.now(); await dbPut('points', pt); touchProject(pt.projectId); };
+
+  openSheet(`
+    <div class="sheet-head lv-${pt.level}" id="ptHead">
+      <span class="bignum" id="ptNum">P${pt.num}</span>
+      <div class="grow"><h2>${esc(plan?.name || 'Plan')}</h2><small>Créé le ${fmtDate(pt.createdAt)}</small></div>
+      <button class="ibtn" data-a="close-sheet" aria-label="Fermer">${ICON.close}</button>
+    </div>
+    <div class="sheet-body">
+      <div class="field"><span class="eyebrow">Niveau</span>
+        <div class="chips" id="ptLevels">${LEVELS.map(l => `<button class="chip lvl lv-${l.k}" data-k="${l.k}" aria-pressed="${pt.level === l.k}"><span class="dot"></span>${esc(l.label)}</button>`).join('')}</div></div>
+      <div class="field"><span class="eyebrow">Lot / thème</span>
+        <div class="chips" id="ptCats">${CATS.map(c => `<button class="chip" data-k="${esc(c)}" aria-pressed="${pt.cat === c}">${esc(c)}</button>`).join('')}</div></div>
+      <label class="field"><span class="eyebrow">Remarque</span>
+        <textarea id="ptText" placeholder="Écrivez, ou dictez avec le micro du clavier.">${esc(pt.text)}</textarea></label>
+      <div class="field"><span class="eyebrow">Audio</span>
+        <div class="row-btns">
+          ${CAN_RECORD ? `<button class="btn" id="recBtn">${ICON.mic}Enregistrer</button>` : ''}
+          <label class="btn" for="inAudio">${ICON.mic}${CAN_RECORD ? 'Importer un audio' : 'Dictaphone / fichier audio'}</label>
+        </div>
+        <div class="media" id="audList"></div></div>
+      <div class="field"><span class="eyebrow">Photos</span>
+        <div class="row-btns">
+          <label class="btn" for="inPhotoCam">${ICON.cam}Prendre une photo</label>
+          <label class="btn" for="inPhotoLib">${ICON.img}Galerie</label>
+        </div>
+        <div class="photos" id="phList"></div></div>
+      <div class="divider"></div>
+      <div class="row-btns">
+        ${S.view === 'plan' ? `<button class="btn" id="ptMove">${ICON.pin}Déplacer le repère</button>` : `<button class="btn" id="ptShow">${ICON.pin}Voir sur le plan</button>`}
+        <button class="btn danger" id="ptDel">Supprimer le point</button>
+      </div>
+    </div>`, sh => {
+    const head = $('#ptHead', sh);
+    $('#ptLevels', sh).addEventListener('click', async e => {
+      const b = e.target.closest('.chip'); if (!b) return;
+      pt.level = b.dataset.k;
+      $$('.chip', $('#ptLevels', sh)).forEach(c => c.setAttribute('aria-pressed', String(c === b)));
+      head.className = `sheet-head lv-${pt.level}`;
+      await save(); viewer?.refreshPins().then(() => viewer?.highlight(pt.id));
+    });
+    $('#ptCats', sh).addEventListener('click', async e => {
+      const b = e.target.closest('.chip'); if (!b) return;
+      pt.cat = pt.cat === b.dataset.k ? '' : b.dataset.k;
+      $$('.chip', $('#ptCats', sh)).forEach(c => c.setAttribute('aria-pressed', String(c.dataset.k === pt.cat)));
+      await save();
+    });
+    const ta = $('#ptText', sh);
+    ta.addEventListener('input', () => { pt.text = ta.value; clearTimeout(saveTimer); saveTimer = setTimeout(save, 400); });
+    if (opts.fresh) setTimeout(() => ta.focus({ preventScroll: true }), 150);
+
+    const renderMedia = async () => {
+      const list = (await dbBy('media', 'pointId', pt.id)).sort((a, b) => a.createdAt - b.createdAt);
+      const auds = list.filter(m => m.kind === 'audio'), phs = list.filter(m => m.kind === 'photo');
+      $('#audList', sh).innerHTML = auds.map((m, i) => `<div class="aud"><small>A${i + 1}</small><audio controls preload="metadata" src="${u(m.blob)}"></audio>
+        <button class="ibtn" data-del-media="${m.id}" aria-label="Supprimer l'audio">${ICON.close}</button></div>`).join('');
+      $('#phList', sh).innerHTML = phs.map(m => `<button data-photo="${m.id}" style="background-image:url('${u(m.blob)}')" aria-label="Voir la photo"></button>`).join('');
+    };
+    renderMedia();
+
+    const addMedia = async (kind, blob, mime) => {
+      await dbPut('media', { id: uid(), projectId: pt.projectId, pointId: pt.id, kind, blob, mime: mime || blob.type, createdAt: Date.now() });
+      await save(); renderMedia();
+    };
+
+    sh.addEventListener('click', async e => {
+      const d = e.target.closest('[data-del-media]');
+      if (d) { armDanger(d, '✓', async () => { await dbDel('media', d.dataset.delMedia); renderMedia(); }); d.style.color = 'var(--l-bloq)'; return; }
+      const ph = e.target.closest('[data-photo]');
+      if (ph) { const m = await dbGet('media', ph.dataset.photo); if (m) showPhoto(m, renderMedia); }
+    });
+
+    // Audio
+    const audInput = $('#inAudio');
+    audInput.onchange = async () => { const f = audInput.files[0]; audInput.value = ''; if (f) { await addMedia('audio', f, f.type); toast('Audio ajouté'); } };
+    const recBtn = $('#recBtn', sh);
+    let stream = null, chunks = [], t0 = 0, tick = null;
+    const stopRec = () => { if (recorder && recorder.state !== 'inactive') recorder.stop(); };
+    if (recBtn) recBtn.addEventListener('click', async () => {
+      if (recorder && recorder.state === 'recording') { stopRec(); return; }
+      try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+      catch { toast('Micro refusé : utilisez « Importer un audio » ou la dictée du clavier', 4000); return; }
+      chunks = [];
+      recorder = new MediaRecorder(stream);
+      recorder.ondataavailable = ev => ev.data.size && chunks.push(ev.data);
+      recorder.onstop = async () => {
+        clearInterval(tick); stream.getTracks().forEach(t => t.stop());
+        const type = recorder.mimeType || 'audio/webm'; recorder = null;
+        if (recBtn.isConnected) { recBtn.classList.remove('rec'); recBtn.innerHTML = `${ICON.mic}Enregistrer`; }
+        if (chunks.length) { await addMedia('audio', new Blob(chunks, { type }), type); toast('Audio enregistré'); }
+      };
+      recorder.start(1000); t0 = Date.now();
+      recBtn.classList.add('rec');
+      const upd = () => { const s = Math.round((Date.now() - t0) / 1000); recBtn.innerHTML = `<span class="dot"></span>Arrêter · ${Math.floor(s / 60)}:${pad(s % 60, 2)}`; };
+      upd(); tick = setInterval(upd, 500);
+    });
+
+    // Photos
+    const onPhotos = input => async () => {
+      const files = [...input.files]; input.value = ''; if (!files.length) return;
+      toast(files.length > 1 ? `Ajout de ${files.length} photos…` : 'Ajout de la photo…');
+      for (const f of files) await addMedia('photo', await shrinkImage(f), 'image/jpeg');
+      toast(files.length > 1 ? `${files.length} photos ajoutées` : 'Photo ajoutée');
+    };
+    $('#inPhotoCam').onchange = onPhotos($('#inPhotoCam'));
+    $('#inPhotoLib').onchange = onPhotos($('#inPhotoLib'));
+
+    $('#ptMove', sh)?.addEventListener('click', () => { closeSheet(true); setAddMode(false, pt.id); });
+    $('#ptShow', sh)?.addEventListener('click', () => go('plan', { planId: pt.planId, focusPoint: pt.id }));
+    $('#ptDel', sh).addEventListener('click', e => armDanger(e.currentTarget, `Confirmer la suppression du point ${pt.num}`, async () => {
+      await deletePoint(pt.id); closeSheet(); await viewer?.refreshPins(); toast(`Point ${pt.num} supprimé`);
+    }));
+
+    return () => {
+      clearTimeout(saveTimer);
+      if (ta.value !== pt.text || saveTimer) { pt.text = ta.value; save(); }
+      stopRec();
+      $('#inAudio').onchange = $('#inPhotoCam').onchange = $('#inPhotoLib').onchange = null;
+      setTimeout(() => sheetUrls.forEach(x => URL.revokeObjectURL(x)), 1500);
+      $$('.pin.hl').forEach(p => p.classList.remove('hl'));
+    };
+  });
+}
+
+function showPhoto(m, after) {
+  const lb = $('#lightbox'); const url = URL.createObjectURL(m.blob);
+  lb.innerHTML = `<img src="${url}" alt="Photo du point"><div class="lb-bar">
+    <button class="btn" id="lbDel">Supprimer</button><button class="btn" id="lbClose">Fermer</button></div>`;
+  lb.hidden = false;
+  const close = () => { lb.hidden = true; lb.innerHTML = ''; URL.revokeObjectURL(url); };
+  $('#lbClose', lb).onclick = close;
+  $('#lbDel', lb).onclick = e => armDanger(e.currentTarget, 'Confirmer', async () => { await dbDel('media', m.id); close(); after?.(); });
+}
+
+async function shrinkImage(file, max = 2000) {
+  try {
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    bmp.close?.();
+    return (await toBlob(c, 'image/jpeg', 0.85)) || file;
+  } catch { return file; }
+}
+
+/* ---------- Import de plans ---------- */
+function parsePages(spec, n) {
+  if (!spec.trim()) return [...Array(n)].map((_, i) => i + 1);
+  const out = new Set();
+  for (const part of spec.split(/[,; ]+/)) {
+    const m = part.match(/^(\d+)(?:-(\d+))?$/); if (!m) continue;
+    const a = +m[1], b = m[2] ? +m[2] : a;
+    for (let i = Math.min(a, b); i <= Math.max(a, b); i++) if (i >= 1 && i <= n) out.add(i);
+  }
+  return [...out].sort((a, b) => a - b);
+}
+
+async function makeThumb(source, w, h) {
+  const k = Math.min(1, 480 / Math.max(w, h));
+  const c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+  x.drawImage(source, 0, 0, c.width, c.height);
+  return toBlob(c, 'image/jpeg', 0.8);
+}
+
+async function addPlanFromCanvas(projectId, name, canvas, order) {
+  const blob = await toBlob(canvas, 'image/jpeg', 0.86);
+  const thumb = await makeThumb(canvas, canvas.width, canvas.height);
+  await dbPut('plans', { id: uid(), projectId, name, blob, thumb, w: canvas.width, h: canvas.height, order, createdAt: Date.now() });
+}
+
+$('#inPlan').addEventListener('change', () => {
+  const inp = $('#inPlan'), f = inp.files[0]; inp.value = '';
+  if (f && S.projectId) handlePlanFile(f);
+});
+async function handlePlanFile(f) {
+  {
+    const base = f.name.replace(/\.[^.]+$/, '');
+    const existing = await dbBy('plans', 'projectId', S.projectId);
+    let order = existing.reduce((m, p) => Math.max(m, p.order || 0), 0) + 1;
+    if (/pdf$/i.test(f.type) || /\.pdf$/i.test(f.name)) {
+      if (!window.pdfjsLib) { toast('Lecteur PDF indisponible : connectez-vous à internet pour importer un PDF', 4500); return; }
+      let pdf;
+      try { pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise; }
+      catch (e) { toast('PDF illisible : ' + (e.message || e), 4500); return; }
+      const n = pdf.numPages;
+      const run = async (pages, name) => {
+        openSheet(`${sheetHead('Import en cours', f.name)}<div class="sheet-body"><p class="note" id="impMsg">Préparation…</p><div class="prog"><i id="impBar"></i></div></div>`);
+        for (let i = 0; i < pages.length; i++) {
+          $('#impMsg').textContent = `Page ${pages[i]} (${i + 1} / ${pages.length})…`;
+          const page = await pdf.getPage(pages[i]);
+          const v1 = page.getViewport({ scale: 1 });
+          const scale = Math.min(Math.sqrt(MAX_PLAN_PIXELS / (v1.width * v1.height)), 8);
+          const vp = page.getViewport({ scale });
+          const c = document.createElement('canvas'); c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+          const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+          await page.render({ canvasContext: ctx, viewport: vp }).promise;
+          const nm = pages.length > 1 || n > 1 ? `${name} — p.${pages[i]}` : name;
+          await addPlanFromCanvas(S.projectId, nm, c, order++);
+          c.width = c.height = 0; page.cleanup();
+          $('#impBar').style.width = `${Math.round((i + 1) / pages.length * 100)}%`;
+        }
+        await touchProject(S.projectId);
+        closeSheet(); toast(`${pages.length} plan${pages.length > 1 ? 's' : ''} importé${pages.length > 1 ? 's' : ''}`);
+      };
+      if (n === 1) return run([1], base);
+      openSheet(`${sheetHead('Importer le PDF', `${f.name} · ${n} pages`)}<form class="sheet-body" id="pgForm">
+        <label class="field"><span class="eyebrow">Nom du plan</span><input type="text" id="pgName" value="${esc(base)}"></label>
+        <label class="field"><span class="eyebrow">Pages à importer</span><input type="text" id="pgSpec" placeholder="Toutes (ou ex. 1-3, 7)" inputmode="numeric"></label>
+        <p class="note">Chaque page devient un plan séparé. Évitez d'importer des dizaines de pages inutiles : chaque plan occupe 2 à 5 Mo.</p>
+        <button class="btn primary block" type="submit">Importer</button></form>`, sh => {
+        $('#pgForm', sh).addEventListener('submit', e => {
+          e.preventDefault();
+          const pages = parsePages($('#pgSpec', sh).value, n);
+          if (!pages.length) { toast('Aucune page valide'); return; }
+          run(pages, $('#pgName', sh).value.trim() || base);
+        });
+      });
+    } else {
+      try {
+        const bmp = await createImageBitmap(f);
+        const k = Math.min(1, Math.sqrt(MAX_PLAN_PIXELS / (bmp.width * bmp.height)));
+        const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+        const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(bmp, 0, 0, c.width, c.height);
+        await addPlanFromCanvas(S.projectId, base, c, order);
+        await touchProject(S.projectId); renderProject(); toast('Plan importé');
+      } catch (e) { toast('Image illisible : ' + (e.message || e), 4000); }
+    }
+  }
+}
+
+/* ---------- Export / import du relevé ---------- */
+async function saveFile(filename, blob) {
+  if (IN_CLAUDE && window.claude.use) {
+    let dl = null;
+    try { dl = await window.claude.use('downloads'); } catch {}
+    if (dl) {
+      try { await dl.save({ filename, data: blob }); toast('Relevé exporté'); }
+      catch (e) { toast(e?.code === 'declined' ? 'Export annulé' : `Export impossible (${e?.code || e?.message || e})`, 4000); }
+      return;
+    }
+  }
+  if (navigator.canShare && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
+    const file = new File([blob], filename, { type: 'application/zip' });
+    if (navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: filename }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
+  toast('Relevé exporté');
+}
+
+function drawPins(ctx, W, H, pts) {
+  const r = Math.max(14, Math.max(W, H) / 170);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `600 ${Math.round(r * 1.05)}px "IBM Plex Mono", monospace`;
+  const css = getComputedStyle(document.documentElement);
+  for (const p of pts) {
+    const x = p.x * W, y = p.y * H, col = css.getPropertyValue(`--l-${p.level}`).trim() || '#2D8653';
+    const label = String(p.num), w = Math.max(r * 2, ctx.measureText(label).width + r);
+    const cy = y - r * 1.9;
+    ctx.fillStyle = col; ctx.strokeStyle = '#fff'; ctx.lineWidth = r * 0.18;
+    ctx.fillRect(x - r * 0.1, cy, r * 0.2, y - cy);
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(x - w / 2, cy - r, w, r * 2, r) : ctx.rect(x - w / 2, cy - r, w, r * 2);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = `600 ${Math.round(r * 1.05)}px "IBM Plex Mono", monospace`;
+    ctx.fillText(label, x, cy + r * 0.05);
+  }
+}
+
+async function exportProject(id) {
+  if (!window.JSZip) { toast('Module d\'export indisponible hors connexion au premier chargement', 4500); return; }
+  const p = await dbGet('projects', id);
+  const plans = (await dbBy('plans', 'projectId', id)).sort((a, b) => a.order - b.order);
+  const points = (await dbBy('points', 'projectId', id)).sort((a, b) => a.num - b.num);
+  const media = (await dbBy('media', 'projectId', id)).sort((a, b) => a.createdAt - b.createdAt);
+  openSheet(`${sheetHead('Export du relevé', p.name)}<div class="sheet-body"><p class="note" id="expMsg">Préparation…</p><div class="prog"><i id="expBar"></i></div></div>`);
+  const step = (msg, f) => { const m = $('#expMsg'), b = $('#expBar'); if (m) m.textContent = msg; if (b) b.style.width = `${Math.round(f * 100)}%`; };
+
+  const zip = new JSZip();
+  const planKey = new Map(plans.map((pl, i) => [pl.id, `${pad(i + 1, 2)} - ${slug(pl.name)}`]));
+  const data = {
+    format: 'releve-chantier', version: 1, app: APP_VERSION, exportedAt: new Date().toISOString(),
+    project: { name: p.name, createdAt: p.createdAt, nextNum: p.nextNum },
+    levels: LEVEL_LABEL, plans: [], points: [],
+  };
+
+  for (let i = 0; i < plans.length; i++) {
+    const pl = plans[i], key = planKey.get(pl.id);
+    step(`Plan ${i + 1} / ${plans.length} : ${pl.name}`, i / Math.max(1, plans.length) * 0.7);
+    zip.file(`plans_bruts/${key}.jpg`, pl.blob);
+    const bmp = await createImageBitmap(pl.blob);
+    const c = document.createElement('canvas'); c.width = pl.w; c.height = pl.h;
+    const ctx = c.getContext('2d'); ctx.drawImage(bmp, 0, 0); bmp.close?.();
+    drawPins(ctx, pl.w, pl.h, points.filter(x => x.planId === pl.id));
+    zip.file(`plans_annotes/${key}.jpg`, await toBlob(c, 'image/jpeg', 0.85));
+    c.width = c.height = 0;
+    data.plans.push({ key, name: pl.name, w: pl.w, h: pl.h, order: pl.order, file: `plans_bruts/${key}.jpg`, annotated: `plans_annotes/${key}.jpg` });
+  }
+
+  step('Points et médias…', 0.75);
+  const csv = [['N°', 'Plan', 'Niveau', 'Lot', 'Remarque', 'Créé le', 'Photos', 'Audios', 'X (%)', 'Y (%)']];
+  for (const pt of points) {
+    const pm = media.filter(m => m.pointId === pt.id);
+    const photos = [], audios = [];
+    pm.filter(m => m.kind === 'photo').forEach((m, i) => { const f = `medias/P${pad(pt.num)}-photo-${i + 1}.${extOf(m.mime || m.blob.type) === 'bin' ? 'jpg' : extOf(m.mime || m.blob.type)}`; zip.file(f, m.blob); photos.push(f); });
+    pm.filter(m => m.kind === 'audio').forEach((m, i) => { const f = `medias/P${pad(pt.num)}-audio-${i + 1}.${extOf(m.mime || m.blob.type)}`; zip.file(f, m.blob); audios.push(f); });
+    data.points.push({ num: pt.num, plan: planKey.get(pt.planId), x: pt.x, y: pt.y, level: pt.level, levelLabel: LEVEL_LABEL[pt.level], cat: pt.cat, text: pt.text, createdAt: new Date(pt.createdAt).toISOString(), updatedAt: new Date(pt.updatedAt).toISOString(), photos, audios });
+    csv.push([pt.num, plans.find(x => x.id === pt.planId)?.name || '', LEVEL_LABEL[pt.level], pt.cat, pt.text, fmtDate(pt.createdAt), photos.length, audios.length, (pt.x * 100).toFixed(1), (pt.y * 100).toFixed(1)]);
+  }
+  zip.file('releve.json', JSON.stringify(data, null, 2));
+  zip.file('releve.csv', '﻿' + csv.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n'));
+
+  step('Compression…', 0.85);
+  const blob = await zip.generateAsync({ type: 'blob' }, m => step('Compression…', 0.85 + m.percent / 100 * 0.15));
+  const d = new Date(), stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1, 2)}-${pad(d.getDate(), 2)}`;
+  closeSheet(true);
+  await saveFile(`Releve_${slug(p.name)}_${stamp}.zip`, blob);
+  if (S.view === 'project') renderProject();
+}
+
+$('#inBackup').addEventListener('change', () => {
+  const inp = $('#inBackup'), f = inp.files[0]; inp.value = '';
+  if (f) restoreBackup(f);
+});
+async function restoreBackup(f) {
+  {
+    if (!window.JSZip) { toast('Module d\'import indisponible hors connexion', 4000); return; }
+    try {
+      const zip = await JSZip.loadAsync(f);
+      const data = JSON.parse(await zip.file('releve.json').async('string'));
+      if (data.format !== 'releve-chantier') throw new Error('ce fichier n\'est pas un export Relevé Chantier');
+      const names = (await dbAll('projects')).map(p => p.name);
+      let name = data.project.name; if (names.includes(name)) name += ' (importé)';
+      const pid = uid(), now = Date.now();
+      const maxNum = data.points.reduce((m, p) => Math.max(m, p.num), 0);
+      await dbPut('projects', { id: pid, name, createdAt: Date.parse(data.project.createdAt) || data.project.createdAt || now, updatedAt: now, nextNum: Math.max(data.project.nextNum || 1, maxNum + 1) });
+      const planIds = {};
+      for (const pl of data.plans) {
+        const blob = new Blob([await zip.file(pl.file).async('arraybuffer')], { type: 'image/jpeg' });
+        const bmp = await createImageBitmap(blob);
+        const thumb = await makeThumb(bmp, bmp.width, bmp.height); bmp.close?.();
+        const id = uid(); planIds[pl.key] = id;
+        await dbPut('plans', { id, projectId: pid, name: pl.name, blob, thumb, w: pl.w, h: pl.h, order: pl.order, createdAt: now });
+      }
+      for (const p of data.points) {
+        const id = uid();
+        await dbPut('points', { id, projectId: pid, planId: planIds[p.plan], num: p.num, x: p.x, y: p.y, level: p.level, cat: p.cat || '', text: p.text || '', createdAt: Date.parse(p.createdAt) || now, updatedAt: Date.parse(p.updatedAt) || now });
+        for (const [kind, files] of [['photo', p.photos || []], ['audio', p.audios || []]]) {
+          for (const file of files) {
+            const zf = zip.file(file); if (!zf) continue;
+            const ext = file.split('.').pop();
+            const mime = kind === 'photo' ? 'image/jpeg' : ({ webm: 'audio/webm', ogg: 'audio/ogg', m4a: 'audio/mp4', mp3: 'audio/mpeg', wav: 'audio/wav' }[ext] || 'audio/*');
+            await dbPut('media', { id: uid(), projectId: pid, pointId: id, kind, blob: new Blob([await zf.async('arraybuffer')], { type: mime }), mime, createdAt: now });
+          }
+        }
+      }
+      toast(`Chantier « ${name} » importé`);
+      go('project', { projectId: pid, tab: 'plans' });
+    } catch (e) { toast('Import impossible : ' + (e.message || e), 4500); }
+  }
+}
+
+/* ---------- Chantier d'exemple ---------- */
+async function createDemo() {
+  const W = 2400, H = 1600, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0, 0, W, H);
+  x.strokeStyle = '#e4e8ec'; x.lineWidth = 1;
+  for (let i = 0; i < W; i += 60) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, H); x.stroke(); }
+  for (let j = 0; j < H; j += 60) { x.beginPath(); x.moveTo(0, j); x.lineTo(W, j); x.stroke(); }
+  x.strokeStyle = '#1d2733'; x.lineWidth = 14; x.strokeRect(120, 120, 2160, 1200);
+  x.lineWidth = 8;
+  [[120, 620, 900, 620], [900, 120, 900, 1320], [1500, 120, 1500, 1320], [1500, 760, 2280, 760], [120, 980, 900, 980]].forEach(([a, b, d, e]) => { x.beginPath(); x.moveTo(a, b); x.lineTo(d, e); x.stroke(); });
+  x.fillStyle = '#1d2733'; x.font = '600 44px "IBM Plex Sans Condensed", sans-serif'; x.textAlign = 'center';
+  [['GALERIE', 510, 380], ['LOCAL CTA', 510, 810], ['OFFICE', 510, 1160], ['SALLE D\'EXPOSITION', 1200, 720], ['PAVILLON', 1890, 450], ['RÉSERVE', 1890, 1050]].forEach(([t, a, b]) => x.fillText(t, a, b));
+  x.strokeStyle = '#1d2733'; x.lineWidth = 3; x.strokeRect(1720, 1380, 560, 160);
+  x.font = '600 30px "IBM Plex Sans Condensed", sans-serif'; x.textAlign = 'left';
+  x.fillText('PLAN D\'EXEMPLE — NIVEAU 00', 1745, 1440); x.font = '500 26px "IBM Plex Mono", monospace'; x.fillText('Éch. 1/100 · Indice A', 1745, 1500);
+
+  const pid = uid(), now = Date.now();
+  await dbPut('projects', { id: pid, name: 'Chantier d\'exemple', createdAt: now, updatedAt: now, nextNum: 1 });
+  await addPlanFromCanvas(pid, 'Plan d\'exemple N00', c, 1);
+  const [plan] = await dbBy('plans', 'projectId', pid);
+  const samples = [
+    [0.21, 0.30, 'bloq', 'CVC', 'Exemple : gaine de soufflage non obturée, poussière de chantier à l\'intérieur.'],
+    [0.21, 0.52, 'clar', 'CVC', 'Exemple : accès maintenance de la CTA à vérifier (trappe 600×600 prévue ?).'],
+    [0.79, 0.25, 'obs', 'Désenfumage', 'Exemple : volet de désenfumage posé, étiquetage manquant.'],
+    [0.50, 0.50, 'pos', 'Architecture', 'Exemple : intégration des diffuseurs linéaires soignée.'],
+  ];
+  for (const [px, py, level, cat, text] of samples) {
+    const num = await nextNumber(pid);
+    await dbPut('points', { id: uid(), projectId: pid, planId: plan.id, num, x: px, y: py, level, cat, text, createdAt: Date.now(), updatedAt: Date.now() });
+  }
+  go('plan', { projectId: pid, planId: plan.id });
+}
+
+/* ---------- Menus ---------- */
+function projectMenu() {
+  openSheet(`${sheetHead('Chantier')}<div class="sheet-body">
+    <button class="btn block" id="mRename">Renommer le chantier</button>
+    <button class="btn block" id="mExport">${ICON.down}Exporter le relevé (.zip)</button>
+    <button class="btn danger block" id="mDelete">Supprimer le chantier et tous ses points</button></div>`, sh => {
+    $('#mRename', sh).onclick = async () => {
+      const p = await dbGet('projects', S.projectId);
+      askText({ title: 'Renommer le chantier', label: 'Nom', value: p.name, onOk: async v => { p.name = v; p.updatedAt = Date.now(); await dbPut('projects', p); closeSheet(); } });
+    };
+    $('#mExport', sh).onclick = () => exportProject(S.projectId);
+    $('#mDelete', sh).onclick = e => armDanger(e.currentTarget, 'Confirmer : suppression définitive', async () => { await deleteProject(S.projectId); go('home'); toast('Chantier supprimé'); });
+  });
+}
+function planMenu() {
+  openSheet(`${sheetHead('Plan')}<div class="sheet-body">
+    <button class="btn block" id="mRename">Renommer le plan</button>
+    <button class="btn danger block" id="mDelete">Supprimer le plan et ses points</button></div>`, sh => {
+    $('#mRename', sh).onclick = async () => {
+      const pl = await dbGet('plans', S.planId);
+      askText({ title: 'Renommer le plan', label: 'Nom', value: pl.name, onOk: async v => { pl.name = v; await dbPut('plans', pl); closeSheet(true); renderPlan(); } });
+    };
+    $('#mDelete', sh).onclick = e => armDanger(e.currentTarget, 'Confirmer : suppression définitive', async () => { await deletePlan(S.planId); go('project', { tab: 'plans' }); toast('Plan supprimé'); });
+  });
+}
+
+/* ---------- Actions ---------- */
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-a]'); if (!el) return;
+  const a = el.dataset.a, id = el.dataset.id;
+  switch (a) {
+    case 'home': go('home'); break;
+    case 'new-project': askText({ title: 'Nouveau chantier', label: 'Nom du chantier', value: '', ok: 'Créer', onOk: async v => {
+      const now = Date.now(), pid = uid();
+      await dbPut('projects', { id: pid, name: v, createdAt: now, updatedAt: now, nextNum: 1 });
+      go('project', { projectId: pid, tab: 'plans' });
+    } }); break;
+    case 'open-project': go('project', { projectId: id, tab: 'plans', filter: 'all' }); break;
+    case 'tab': S.tab = el.dataset.k; renderProject(); break;
+    case 'filter': S.filter = el.dataset.k; renderProject(); break;
+    case 'open-plan': go('plan', { planId: id }); break;
+    case 'open-point': openPoint(id); break;
+    case 'back-project': go('project'); break;
+    case 'tab-points': go('project', { tab: 'points' }); break;
+    case 'project-menu': projectMenu(); break;
+    case 'plan-menu': planMenu(); break;
+    case 'export': exportProject(S.projectId); break;
+    case 'demo': createDemo(); break;
+    case 'close-sheet': closeSheet(); break;
+    case 'zoom-in': viewer && (viewer.touched = true, viewer.zoomCenter(1.5)); break;
+    case 'zoom-out': viewer && (viewer.touched = true, viewer.zoomCenter(1 / 1.5)); break;
+    case 'zoom-fit': viewer && (viewer.touched = false, viewer.fit()); break;
+    case 'add-mode': (S.addMode || S.moveId) ? setAddMode(false) : setAddMode(true); break;
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (!$('#lightbox').hidden) { $('#lbClose')?.click(); return; }
+    if (!$('#sheet').hidden) closeSheet(); else if (S.addMode || S.moveId) setAddMode(false);
+  }
+});
+
+/* ---------- Démarrage ---------- */
+try { navigator.storage?.persist?.(); } catch {}
+if (!IN_CLAUDE && 'serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+go('home');
+})();
+</script>
+
+</body></html>
