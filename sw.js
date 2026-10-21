@@ -1,7 +1,7 @@
 // Cache hors connexion : l'application et ses bibliothèques sont gardées sur l'appareil.
-const CACHE = 'releve-1792513652';
+const CACHE = 'releve-1792584748';
 const ASSETS = [
-  './', './index.html', './manifest.webmanifest', './icon.svg',
+  './', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
